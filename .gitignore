@@ -1,0 +1,13 @@
+processed_images/
+app.log
+app.sock
+wsgi.py
+pdfConverter/
+DOCPDF/
+XLSPDF/
+PPTPDF/
+__pycache__/
+/blueprints/__pycache__
+/database/__init__.py
+/db Configuration
+/helpers/__pycache__
