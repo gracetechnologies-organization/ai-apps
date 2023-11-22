@@ -1,7 +1,7 @@
 import pymongo
 
 mongo_uri = "mongodb://localhost:27017/"
-database_name = "AiDtabase"
+database_name = "AiDatabase"
 collection_name = "pdf_coll"
 
 def get_auth_token_from_db():
