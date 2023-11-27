@@ -8,11 +8,10 @@ from blueprints.pptx2pdf import ppt2pdf_blueprint
 from blueprints.pdf2ppt import pdf2ppt_blueprint
 from blueprints.xlsx2pdf import xls2pdf_blueprint
 from blueprints.pdf2xls import pdf2xls_blueprint
-from blueprints.upload_blueprint import upload_blueprint
-from blueprints.process_data_blueprint import process_data_blueprint
 from blueprints.iosresume_blueprint import iosresume_blueprint
 from blueprints.andresume_blueprint import andresume_blueprint
 from blueprints.coverletter_blueprint import letter_blueprint
+from blueprints.webresume_blueprint import webresume_blueprint
 
 app = Flask(__name__)
 
@@ -32,11 +31,10 @@ app.register_blueprint(ppt2pdf_blueprint)
 app.register_blueprint(pdf2ppt_blueprint)
 app.register_blueprint(xls2pdf_blueprint)
 app.register_blueprint(pdf2xls_blueprint)
-app.register_blueprint(upload_blueprint)
-app.register_blueprint(process_data_blueprint)
 app.register_blueprint(iosresume_blueprint)
 app.register_blueprint(andresume_blueprint)
 app.register_blueprint(letter_blueprint)
+app.register_blueprint(webresume_blueprint)
 
 if __name__  == '__main__':
     app.run(debug=True, host= "0.0.0.0")

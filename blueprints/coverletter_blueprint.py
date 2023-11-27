@@ -1,7 +1,7 @@
 from flask import Blueprint, request, jsonify, current_app
 import openai
 from helpers.openaiHelper import get_openai_key_from_db
-from middlewares.bdauthorization import authorization_required
+from middlewares.resauthorization import authorization_required
 
 letter_blueprint = Blueprint("letter_blueprint", __name__)
 

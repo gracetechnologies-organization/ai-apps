@@ -1,7 +1,7 @@
 from flask import request, jsonify, Blueprint, current_app
 import openai, json, os, threading, csv
 from helpers.openaiHelper import get_openai_key_from_db
-from middlewares.bdauthorization import authorization_required
+from middlewares.resauthorization import authorization_required
 
 iosresume_blueprint = Blueprint('iosresume', __name__)
 

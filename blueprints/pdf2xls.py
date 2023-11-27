@@ -3,13 +3,35 @@ import tabula
 import pandas as pd
 from flask import Blueprint, request, send_file, current_app, jsonify, make_response
 from io import BytesIO
+import uuid
+from concurrent.futures import ThreadPoolExecutor
 from middlewares.pdfauthorization import authorization_required
 
 pdf2xls_blueprint = Blueprint('pdf2xls_blueprint', __name__)
 
+def convert_pdf_to_xlsx_task(file, uploads_dir, pdf_file_path):
+    file.save(pdf_file_path)
+
+    # Read PDF file
+    tables = tabula.read_pdf(pdf_file_path, pages='all')
+
+    # Generate a unique identifier for the Excel file
+    uuid_str = str(uuid.uuid4())[:8]
+    excel_filename = f"{os.path.splitext(os.path.basename(pdf_file_path))[0]}_{uuid_str}.xlsx"
+    excel_file_path = os.path.join(uploads_dir, excel_filename)
+
+    # Write each table to a separate sheet in the Excel file
+    with pd.ExcelWriter(excel_file_path) as writer:
+        for i, table in enumerate(tables):
+            table.to_excel(writer, sheet_name=f'Sheet{i + 1}')
+
+    return excel_filename, excel_file_path
+
 @pdf2xls_blueprint.route('/pdf2xls', methods=['POST'])
-@authorization_required
 def convert_pdf_to_xlsx():
+    pdf_file_path = None
+    excel_file_path = None
+
     try:
         if 'file' not in request.files:
             current_app.logger.warning(f"No file part")
@@ -20,37 +42,36 @@ def convert_pdf_to_xlsx():
             current_app.logger.warning(f"No selected file")
             return jsonify({"error": "No selected file"}), 422
 
-        filename = file.filename
-        file_ext = filename.rsplit('.', 1)[1].lower()
+        filename, file_ext = os.path.splitext(file.filename)
+        file_ext = file_ext.lower()
 
         # Create the 'uploads' directory if it doesn't exist
         cwd = os.getcwd()
         uploads_dir = os.path.join(cwd, 'XLSPDF')
         os.makedirs(uploads_dir, exist_ok=True)
 
-        if file_ext == 'pdf':
-            pdf_file_path = os.path.join(uploads_dir, filename)
-            excel_file_path = os.path.join(uploads_dir, f"{filename.split('.')[0]}.xlsx")
-            file.save(pdf_file_path)
+        if file_ext == '.pdf':
+            uuid_str = str(uuid.uuid4())[:8]
+            pdf_filename = f"{filename}_{uuid_str}.pdf"
+            pdf_file_path = os.path.join(uploads_dir, pdf_filename)
 
-            # Read PDF file
-            tables = tabula.read_pdf(pdf_file_path, pages='all')
+            with ThreadPoolExecutor() as executor:
+                future = executor.submit(convert_pdf_to_xlsx_task, file, uploads_dir, pdf_file_path)
+                excel_filename, excel_file_path = future.result()
 
-            # Write each table to a separate sheet in the Excel file
-            with pd.ExcelWriter(excel_file_path) as writer:
-                for i, table in enumerate(tables):
-                    table.to_excel(writer, sheet_name=f'Sheet{i + 1}')
-
-            os.remove(pdf_file_path)  # Delete the input PDF file
+            # Delete the uploaded .pdf file with UUID
+            if os.path.exists(pdf_file_path):
+                os.remove(pdf_file_path)
 
             # Sending the output file as a variable
             with open(excel_file_path, 'rb') as f:
                 file_data = BytesIO(f.read())
 
-            # Deleting the output Excel file
-            os.remove(excel_file_path)
+            # Deleting the output Excel file with UUID
+            if os.path.exists(excel_file_path):
+                os.remove(excel_file_path)
 
-            response = make_response(send_file(file_data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name=f"{filename.split('.')[0]}.xlsx"))
+            response = make_response(send_file(file_data, mimetype='application/vnd.openxmlformats-officedocument.spreadsheetml.sheet', as_attachment=True, download_name=excel_filename))
             return response, 200
         else:
             current_app.logger.warning(f"Invalid file format. Please upload a .pdf file.")
@@ -60,10 +81,15 @@ def convert_pdf_to_xlsx():
         current_app.logger.error(f"Error in /pdf2xlsx: {str(e)}")
 
         # Remove the files in case of an error
-        if 'pdf_file_path' in locals() and os.path.exists(pdf_file_path):
+        if pdf_file_path and os.path.exists(pdf_file_path):
             os.remove(pdf_file_path)
 
-        if 'excel_file_path' in locals() and os.path.exists(excel_file_path):
+        if excel_file_path and os.path.exists(excel_file_path):
             os.remove(excel_file_path)
 
         return jsonify({'error': f"Try Again, This pdf cannot be converted"}), 500
+
+# Ensure that the code is executable when this script is run
+if __name__ == '__main__':
+    # You can add code here to run the Flask application
+    pass
