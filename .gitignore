@@ -11,3 +11,4 @@ __pycache__/
 /database/__init__.py
 /db Configuration
 /helpers/__pycache__
+Datasets/
