@@ -92,7 +92,7 @@ def handle_processing_status(fetch_result_url):
     current_app.logger.info("Fetch Result API Error: Maximum retries reached without success.")
     raise Exception("Server is currently on its maximum performance. Please try again later.")
 
-@SR_blueprint.route('/SuperResoltion', methods=['POST'])
+@SR_blueprint.route('/SuperResolution', methods=['POST'])
 @authorization_required
 def super_resolution():
     file = request.files.get('file')
