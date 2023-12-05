@@ -88,8 +88,3 @@ def convert_pdf_to_xlsx():
             os.remove(excel_file_path)
 
         return jsonify({'error': f"Try Again, This pdf cannot be converted"}), 500
-
-# Ensure that the code is executable when this script is run
-if __name__ == '__main__':
-    # You can add code here to run the Flask application
-    pass

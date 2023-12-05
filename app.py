@@ -12,6 +12,10 @@ from blueprints.iosresume_blueprint import iosresume_blueprint
 from blueprints.andresume_blueprint import andresume_blueprint
 from blueprints.coverletter_blueprint import letter_blueprint
 from blueprints.webresume_blueprint import webresume_blueprint
+from blueprints.SR_blueprint import SR_blueprint
+from blueprints.Denoiser_blurprint import Denoising_blueprint
+from blueprints.PortraitEnhancer_blueprint import PE_blueprint
+
 
 app = Flask(__name__)
 
@@ -35,6 +39,9 @@ app.register_blueprint(iosresume_blueprint)
 app.register_blueprint(andresume_blueprint)
 app.register_blueprint(letter_blueprint)
 app.register_blueprint(webresume_blueprint)
+app.register_blueprint(SR_blueprint)
+app.register_blueprint(Denoising_blueprint)
+app.register_blueprint(PE_blueprint)
 
 if __name__  == '__main__':
     app.run(debug=True, host= "0.0.0.0")

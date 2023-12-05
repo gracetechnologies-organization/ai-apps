@@ -2,6 +2,7 @@ processed_images/
 app.log
 app.sock
 wsgi.py
+.venv/
 Datasets/
 pdfConverter/
 DOCPDF/
