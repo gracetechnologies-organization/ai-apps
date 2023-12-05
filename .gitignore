@@ -2,6 +2,7 @@ processed_images/
 app.log
 app.sock
 wsgi.py
+Datasets/
 pdfConverter/
 DOCPDF/
 XLSPDF/
@@ -11,3 +12,4 @@ __pycache__/
 /database/__init__.py
 /db Configuration
 /helpers/__pycache__
+Datasets/

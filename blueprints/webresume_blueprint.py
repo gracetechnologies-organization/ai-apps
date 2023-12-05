@@ -3,32 +3,7 @@ import openai, json, os, threading, csv
 from helpers.openaiHelper import get_openai_key_from_db
 from middlewares.resauthorization import authorization_required
 
-andresume_blueprint = Blueprint("andresume_blueprint", __name__)
-
-data_list = []
-data_lock = threading.Lock()
-
-DATASETS_DIR = 'Datasets'
-CSV_FILE = 'AndroidDataset.csv'
-CSV_PATH = os.path.join(DATASETS_DIR, CSV_FILE)
-
-def save_to_csv(data):
-    # Check if the directory exists, if not, create it
-    if not os.path.exists(DATASETS_DIR):
-        os.makedirs(DATASETS_DIR)
-
-    # Check if the CSV file exists, if not, create it and write the header
-    if not os.path.exists(CSV_PATH):
-        with open(CSV_PATH, 'w', newline='') as csvfile:
-            fieldnames = ['JobDescription', 'Response']
-            writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-            writer.writeheader()
-
-    # Append data to the CSV file
-    with open(CSV_PATH, 'a', newline='') as csvfile:
-        fieldnames = ['JobDescription', 'Response']
-        writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
-        writer.writerow(data)
+webresume_blueprint = Blueprint("webresume_blueprint", __name__)
 
 openai.api_key = None
 
@@ -63,7 +38,7 @@ def get_completion(prompt, model="gpt-3.5-turbo-instruct", api_key=None):
         current_app.logger.error(f"Error in get_completion function: {str(e)}")
         raise
 
-@andresume_blueprint.route('/api/ai/generate_andresume', methods=['POST'])
+@webresume_blueprint.route('/api/ai/generate_webresume', methods=['POST'])
 @authorization_required
 def generate_resume():
     try:
@@ -81,12 +56,13 @@ def generate_resume():
         prompt = f"""Create a comprehensive CV for a candidate with a strong focus on their professional qualifications and experiences, tailored to the given job description. Data format must be (dd-mm-yyy). The CV must and only have following sections.
 
                     CV Sections:
-                    - Job Title (Heading)
-                    - Professional Summary (Up to 50 words)
-                    - Employment History (List of 2 job titles, employers, start and end dates, cities, and short one line descriptions of experiences in each role)
-                    - Education (List of 2 university names, degree titles, CGPA, start and completion dates)
+                    - Profession (Heading)
+                    - Objecttive (Up to 50 words)
+                    - Work Experience (List of 2 Nested JSON object with job_title, company_name, start_date, end_date, and experience_description list of having 2 short line points only)
                     - Skills (List 5 relevant skills)
-                    - Interests (List 4 hobbies or interests i.e short names of max 10 characters only)
+                    - Interests (List 2 hobbies or interests i.e short names of max 10 characters only)                  
+                    - Achievements (List 2 hobbies or interests i.e short names of max 10 characters only)
+                    - Projects (List 2 hobbies or interests i.e short names of max 10 characters only)
 
                     Format the CV as a JSON object with lowercase keys and underscores instead of spaces.
 
@@ -95,19 +71,9 @@ def generate_resume():
                     Job Description: "{job_description}"
                     """
 
-        parsed_dict = get_completion(prompt, api_key=api_key)
-
-        # Store data in a dictionary
-        data = {'JobDescription': job_description, 'Response': parsed_dict}
-
-        # Acquire lock before appending to the global list
-        with data_lock:
-            data_list.append(data)
-
-        # Offload the file writing to a separate thread
-        threading.Thread(target=save_to_csv, args=(data,)).start()
-        
+        parsed_dict = get_completion(prompt, api_key=api_key)        
         return jsonify(parsed_dict), 200
+    
     except json.JSONDecodeError as e:
         current_app.logger.error(f"Error occurred: Response isn't in JSON format due to the job description provided: {str(e)}")
         return jsonify({"message": "Try again with a detailed and correct job description."}), 500

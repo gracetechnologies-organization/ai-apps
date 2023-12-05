@@ -1,5 +1,5 @@
 from flask import request, abort, current_app, jsonify
-from helpers.bdHelper import is_valid_token
+from helpers.resHelper import is_valid_token
 
 def authorization_required(func):
     def wrapper(*args, **kwargs):
