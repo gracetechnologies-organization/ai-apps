@@ -11,27 +11,19 @@ pdf2xls_blueprint = Blueprint('pdf2xls_blueprint', __name__)
 
 def convert_pdf_to_xlsx_task(file, uploads_dir, pdf_file_path):
     file.save(pdf_file_path)
-
-    # Read PDF file
     tables = tabula.read_pdf(pdf_file_path, pages='all')
-
-    # Generate a unique identifier for the Excel file
     uuid_str = str(uuid.uuid4())[:8]
     excel_filename = f"{os.path.splitext(os.path.basename(pdf_file_path))[0]}_{uuid_str}.xlsx"
     excel_file_path = os.path.join(uploads_dir, excel_filename)
-
-    # Write each table to a separate sheet in the Excel file
     with pd.ExcelWriter(excel_file_path) as writer:
         for i, table in enumerate(tables):
             table.to_excel(writer, sheet_name=f'Sheet{i + 1}')
-
     return excel_filename, excel_file_path
 
 @pdf2xls_blueprint.route('/pdf2xls', methods=['POST'])
 def convert_pdf_to_xlsx():
     pdf_file_path = None
     excel_file_path = None
-
     try:
         if 'file' not in request.files:
             current_app.logger.warning(f"No file part")
@@ -44,8 +36,6 @@ def convert_pdf_to_xlsx():
 
         filename, file_ext = os.path.splitext(file.filename)
         file_ext = file_ext.lower()
-
-        # Create the 'uploads' directory if it doesn't exist
         cwd = os.getcwd()
         uploads_dir = os.path.join(cwd, 'XLSPDF')
         os.makedirs(uploads_dir, exist_ok=True)
@@ -58,16 +48,10 @@ def convert_pdf_to_xlsx():
             with ThreadPoolExecutor() as executor:
                 future = executor.submit(convert_pdf_to_xlsx_task, file, uploads_dir, pdf_file_path)
                 excel_filename, excel_file_path = future.result()
-
-            # Delete the uploaded .pdf file with UUID
             if os.path.exists(pdf_file_path):
                 os.remove(pdf_file_path)
-
-            # Sending the output file as a variable
             with open(excel_file_path, 'rb') as f:
                 file_data = BytesIO(f.read())
-
-            # Deleting the output Excel file with UUID
             if os.path.exists(excel_file_path):
                 os.remove(excel_file_path)
 
@@ -79,12 +63,8 @@ def convert_pdf_to_xlsx():
 
     except Exception as e:
         current_app.logger.error(f"Error in /pdf2xlsx: {str(e)}")
-
-        # Remove the files in case of an error
         if pdf_file_path and os.path.exists(pdf_file_path):
             os.remove(pdf_file_path)
-
         if excel_file_path and os.path.exists(excel_file_path):
             os.remove(excel_file_path)
-
         return jsonify({'error': f"Try Again, This pdf cannot be converted"}), 500

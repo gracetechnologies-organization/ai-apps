@@ -14,10 +14,8 @@ def convert_and_cleanup(file_path, uploads_dir, filename):
 
         if file_ext == 'doc':
             doc_pdf_filename = filename.split('.')[0] + ".pdf"
-
-            # Convert DOC to PDF using LibreOffice
             subprocess.call(['libreoffice',
-                             '--headless',  # Run LibreOffice in headless mode (no GUI)
+                             '--headless',
                              '--convert-to',
                              'pdf',
                              '--outdir',
@@ -26,8 +24,6 @@ def convert_and_cleanup(file_path, uploads_dir, filename):
 
         elif file_ext == 'docx':
             docx_filename = filename.split('.')[0] + ".docx"
-
-            # Convert DOCX to PDF using LibreOffice
             subprocess.call(['libreoffice',
                              '--convert-to',
                              'pdf',
@@ -37,8 +33,6 @@ def convert_and_cleanup(file_path, uploads_dir, filename):
 
         else:
             raise ValueError("Invalid file format. Please upload a .doc or .docx file.")
-
-        # Sending the output file as a variable
         output_filename = doc_pdf_filename if file_ext == 'doc' else docx_filename.replace('.docx', '.pdf')
         with open(os.path.join(uploads_dir, output_filename), 'rb') as f:
             file_data = BytesIO(f.read())
@@ -50,11 +44,8 @@ def convert_and_cleanup(file_path, uploads_dir, filename):
         raise
 
     finally:
-        # Deleting the uploaded file
         if os.path.exists(file_path):
             os.remove(file_path)
-
-        # Deleting the generated PDF file
         output_filepath = os.path.join(uploads_dir, doc_pdf_filename) if file_ext == 'doc' else os.path.join(uploads_dir, docx_filename.replace('.docx', '.pdf'))
         if os.path.exists(output_filepath):
             os.remove(output_filepath)

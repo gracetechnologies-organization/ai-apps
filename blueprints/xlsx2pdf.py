@@ -10,17 +10,14 @@ xls2pdf_blueprint = Blueprint('xls2pdf_blueprint', __name__)
 
 def convert_xls_to_pdf_task(file, uploads_dir, xls_path):
     file.save(xls_path)
-
-    # Convert XLS or XLSX to PDF using LibreOffice
     subprocess.call(['libreoffice',
-                     '--headless',  # Run LibreOffice in headless mode (no GUI)
+                     '--headless',
                      '--convert-to',
                      'pdf:calc_pdf_Export',
                      '--outdir',
                      uploads_dir,
                      xls_path])
 
-    # Sending the output file as a variable
     pdf_filename = os.path.splitext(os.path.basename(xls_path))[0] + ".pdf"
     pdf_path = os.path.join(uploads_dir, pdf_filename)
 
@@ -47,7 +44,6 @@ def convert_xls_to_pdf():
         filename, file_ext = os.path.splitext(file.filename)
         file_ext = file_ext.lower()
 
-        # Create the 'uploads' directory if it doesn't exist
         uploads_dir = os.path.join(os.getcwd(), 'XLSPDF')
         os.makedirs(uploads_dir, exist_ok=True)
 
@@ -60,14 +56,11 @@ def convert_xls_to_pdf():
                 future = executor.submit(convert_xls_to_pdf_task, file, uploads_dir, xls_path)
                 pdf_filename, pdf_path, file_data = future.result()
 
-            # Delete the uploaded .xls or .xlsx file with UUID
             if os.path.exists(xls_path):
                 os.remove(xls_path)
 
             response = make_response(send_file(file_data, mimetype='application/pdf', as_attachment=True,
                                                download_name=pdf_filename))
-
-            # Delete the converted .pdf file with UUID
             if os.path.exists(pdf_path):
                 os.remove(pdf_path)
 
@@ -78,7 +71,6 @@ def convert_xls_to_pdf():
     except Exception as e:
         current_app.logger.error(f"Error in /xls2pdf: {str(e)}")
 
-        # Remove the files in case of an error
         if xls_path and os.path.exists(xls_path):
             os.remove(xls_path)
 
