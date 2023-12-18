@@ -2,10 +2,11 @@ from flask import request, jsonify, Blueprint, current_app
 import random, json, os, threading, csv,ast
 import boto3, botocore
 import pandas as pd
-from middlewares.resauthorization import authorization_required
+from helpers.genaiHelper import get_genai_key_from_db
+from middlewares.SDauthorization import authorization_required
 from helpers.AWSHelper import get_Creds
 
-iosresume_blueprint = Blueprint('iosresume', __name__)
+geniosresume_blueprint = Blueprint('geniosresume', __name__)
 
 Creds = get_Creds()
 
@@ -24,16 +25,18 @@ CSV_FILE = 'IOSDataset.csv'
 CSV_PATH = os.path.join(DATASETS_DIR, CSV_FILE)
 
 def save_to_csv(data):
-
+    # Check if the directory exists, if not, create it
     if not os.path.exists(DATASETS_DIR):
         os.makedirs(DATASETS_DIR)
 
+    # Check if the CSV file exists, if not, create it and write the header
     if not os.path.exists(CSV_PATH):
         with open(CSV_PATH, 'w', newline='') as csvfile:
             fieldnames = ['JobDescription', 'Response']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
 
+    # Append data to the CSV file
     with open(CSV_PATH, 'a', newline='') as csvfile:
         fieldnames = ['JobDescription', 'Response']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -44,7 +47,10 @@ def clean_response(txt):
     end_index = txt.rfind("}") + 1
     json_data = txt[start_index:end_index]
     parsed_json = json.loads(json_data)
+    # formatted_json = json.dumps(parsed_json, indent=2)
     return parsed_json
+    # required_section = json.dumps(parsed_dict, indent=2)
+    # return required_section
 
 def random_response():
     df = pd.read_csv('Datasets/IOSDataset.csv')
@@ -69,28 +75,59 @@ def get_completion(prompt):
             body=body, modelId=modelId, accept=accept, contentType=contentType
         )
         response_body = json.loads(response.get("body").read())
+
         return(clean_response(response_body.get("completion")))
 
     except botocore.exceptions.ClientError as e:
+
         if e.response['Error']['Code'] == 'AccessDeniedException':
             current_app.logger.error(f"\x1b[41m{e.response['Error']['Message']}\
                     \nTo troubeshoot this issue please refer to the following resources.\
                     \nhttps://docs.aws.amazon.com/IAM/latest/UserGuide/troubleshoot_access-denied.html\
                     \nhttps://docs.aws.amazon.com/bedrock/latest/userguide/security-iam.html\x1b[0m\n")
+
         else:
             raise
-@iosresume_blueprint.route('/api/ai/generate_iosresume', methods=['POST'])
+    # try:
+    #     if api_key:
+    #         genai.configure(api_key= api_key)
+    #     else:
+    #         current_app.logger.error("No API key provided.")
+    #         return jsonify({"message":"Please Try Again Later"})
+    #     defaults = {
+    #         'model': 'models/text-bison-001',
+    #         'temperature': 0.1,
+    #         'candidate_count': 1,
+    #         'max_output_tokens': 800,
+    #         'stop_sequences': [],
+    #         'safety_settings': [{"category":"HARM_CATEGORY_DEROGATORY","threshold":"BLOCK_LOW_AND_ABOVE"},{"category":"HARM_CATEGORY_TOXICITY","threshold":"BLOCK_LOW_AND_ABOVE"},{"category":"HARM_CATEGORY_VIOLENCE","threshold":"BLOCK_MEDIUM_AND_ABOVE"},{"category":"HARM_CATEGORY_SEXUAL","threshold":"BLOCK_MEDIUM_AND_ABOVE"},{"category":"HARM_CATEGORY_MEDICAL","threshold":"BLOCK_MEDIUM_AND_ABOVE"},{"category":"HARM_CATEGORY_DANGEROUS","threshold":"BLOCK_MEDIUM_AND_ABOVE"}],
+    #         }
+    #     response = genai.generate_text(
+    #         **defaults,
+    #         prompt=prompt
+    #         )
+    #     generated_text = response.result
+    #     generated_text = clean_response(generated_text)
+    #     return generated_text
+
+    # except Exception as e:
+    #     current_app.logger.error(f"Error in get_completion function: {str(e)}")
+    #     raise
+
+# Define a POST endpoint for your API
+@geniosresume_blueprint.route('/api/ai/generate_geniosresume', methods=['POST'])
 @authorization_required
 def generate_resume():
     try:
-                
+            
+        api_key = get_genai_key_from_db()
+        
         job_description = request.form.get('JobDescription')
         
         if job_description is None:
             return jsonify({"message" : "Job Description is missing."}), 422
         elif len(job_description) < 10 or not job_description[:1].isalpha() or any(char in job_description for char in set('[~!@#$%^&*()_+{}":;\]+$')):
-            return jsonify({"message" :"Please try with correct and detailed job description having no special characters."}), 422
-        
+            return jsonify({"message" :"Please try with correct and detailed job description having no special characters."})
         
         prompt = f"""Human: Generate resume data for a candidate based on the provided job description. Include the following sections:
                     Profession
@@ -105,6 +142,7 @@ def generate_resume():
                     Job Description: "{job_description}"
                     Assistant:
                     """
+        # parsed_dict = get_completion(prompt, api_key)
         parsed_dict = get_completion(prompt)
 
         if parsed_dict is None:
@@ -124,3 +162,4 @@ def generate_resume():
     except Exception as e:
         current_app.logger.error(f"Error in generate_resume function: {str(e)}")
         return jsonify({"message": "Try again with a detailed and correct job description."}), 500
+    

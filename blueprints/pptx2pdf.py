@@ -11,27 +11,22 @@ ppt2pdf_blueprint = Blueprint('ppt2pdf_blueprint', __name__)
 def convert_ppt_to_pdf_task(file, uploads_dir, ppt_path):
     try:
         file.save(ppt_path)
-
-        # Convert PPT/PPTX to PDF using LibreOffice
         subprocess.call(['soffice',
-                         '--headless',  # Run LibreOffice in headless mode (no GUI)
+                         '--headless',
                          '--convert-to',
                          'pdf',
                          '--outdir',
                          uploads_dir,
                          ppt_path])
 
-        # Sending the output file as a variable
+
         pdf_filename = os.path.splitext(os.path.basename(ppt_path))[0] + ".pdf"
         pdf_path = os.path.join(uploads_dir, pdf_filename)
-
         with open(pdf_path, 'rb') as f:
             file_data = BytesIO(f.read())
-
         return pdf_filename, pdf_path, file_data
 
     finally:
-        # Always delete the uploaded .ppt or .pptx file
         if os.path.exists(ppt_path):
             os.remove(ppt_path)
 
@@ -52,8 +47,6 @@ def convert_ppt_to_pdf():
 
         filename, file_ext = os.path.splitext(file.filename)
         file_ext = file_ext.lower()
-
-        # Create the 'uploads' directory if it doesn't exist
         uploads_dir = os.path.join(os.getcwd(), 'PPTPDF')
         os.makedirs(uploads_dir, exist_ok=True)
 
@@ -65,14 +58,10 @@ def convert_ppt_to_pdf():
             with ThreadPoolExecutor() as executor:
                 future = executor.submit(convert_ppt_to_pdf_task, file, uploads_dir, ppt_path)
                 pdf_filename, pdf_path, file_data = future.result()
-
-            # Store pdf_path for later deletion
             pdf_path_for_deletion = pdf_path
 
             response = make_response(send_file(file_data, mimetype='application/pdf', as_attachment=True,
                                                download_name=pdf_filename))
-
-            # Delete the converted .pdf file after successful execution
             if pdf_path_for_deletion and os.path.exists(pdf_path_for_deletion):
                 os.remove(pdf_path_for_deletion)
 
@@ -82,12 +71,8 @@ def convert_ppt_to_pdf():
             return jsonify({"error": "Invalid file format. Please upload a .ppt or .pptx file."}), 422
     except Exception as e:
         current_app.logger.error(f"Error in /ppt2pdf: {str(e)}")
-
-        # Remove the files in case of an error
         if ppt_path and os.path.exists(ppt_path):
             os.remove(ppt_path)
-
         if pdf_path_for_deletion and os.path.exists(pdf_path_for_deletion):
             os.remove(pdf_path_for_deletion)
-
         return jsonify({'error': f"Try Again"}), 500

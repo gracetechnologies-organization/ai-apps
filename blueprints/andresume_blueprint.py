@@ -13,18 +13,15 @@ CSV_FILE = 'AndroidDataset.csv'
 CSV_PATH = os.path.join(DATASETS_DIR, CSV_FILE)
 
 def save_to_csv(data):
-    # Check if the directory exists, if not, create it
     if not os.path.exists(DATASETS_DIR):
         os.makedirs(DATASETS_DIR)
 
-    # Check if the CSV file exists, if not, create it and write the header
     if not os.path.exists(CSV_PATH):
         with open(CSV_PATH, 'w', newline='') as csvfile:
             fieldnames = ['JobDescription', 'Response']
             writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
             writer.writeheader()
 
-    # Append data to the CSV file
     with open(CSV_PATH, 'a', newline='') as csvfile:
         fieldnames = ['JobDescription', 'Response']
         writer = csv.DictWriter(csvfile, fieldnames=fieldnames)
@@ -96,15 +93,11 @@ def generate_resume():
                     """
 
         parsed_dict = get_completion(prompt, api_key=api_key)
-
-        # Store data in a dictionary
         data = {'JobDescription': job_description, 'Response': parsed_dict}
 
-        # Acquire lock before appending to the global list
         with data_lock:
             data_list.append(data)
 
-        # Offload the file writing to a separate thread
         threading.Thread(target=save_to_csv, args=(data,)).start()
         
         return jsonify(parsed_dict), 200

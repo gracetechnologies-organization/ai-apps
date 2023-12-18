@@ -20,13 +20,9 @@ def convert_pdf_to_word():
         if file.filename == '':
             current_app.logger.warning(f"No selected file")
             return jsonify({"error": "No selected file"}), 422
-
-        # Generate a unique identifier (UUID) for the uploaded file
         file_uuid = str(uuid.uuid4())
         filename, file_ext = os.path.splitext(file.filename)
         filename_with_uuid = f"{filename}_{file_uuid}{file_ext}"
-
-        # Create the 'uploads' directory if it doesn't exist
         uploads_dir = os.path.join(os.getcwd(), 'DOCPDF')
         os.makedirs(uploads_dir, exist_ok=True)
 
@@ -34,21 +30,17 @@ def convert_pdf_to_word():
         file.save(file_path)
 
         if file_ext.lower() == '.pdf':
-            # Generate a unique identifier (UUID) for the converted file
             converted_uuid = str(uuid.uuid4())
             word_filename = f"{filename}_{converted_uuid}.docx"
             word_path = os.path.join(uploads_dir, word_filename)
 
-            # Use ThreadPoolExecutor for concurrent conversion
             with ThreadPoolExecutor() as executor:
                 future = executor.submit(parse, file_path, word_path, start=0, end=None)
-                future.result()  # Wait for the conversion to complete
+                future.result()
 
-            # Sending the output file as a variable
             with open(word_path, 'rb') as f:
                 file_data = BytesIO(f.read())
 
-            # Deleting the uploaded and converted files
             os.remove(file_path)
             os.remove(word_path)
 
@@ -56,17 +48,13 @@ def convert_pdf_to_word():
             return response, 200
         else:
             current_app.logger.warning(f"Invalid file format. Please upload a .pdf file.")
-            os.remove(file_path)  # Delete the invalid file
+            os.remove(file_path)
             return jsonify({"error": "Invalid file format. Please upload a .pdf file."}), 422
 
     except Exception as e:
         current_app.logger.error(f"Error in /pdf2word: {str(e)}")
-
-        # Remove the files in case of an error
         if 'file_path' in locals() and os.path.exists(file_path):
             os.remove(file_path)
-
         if 'word_path' in locals() and os.path.exists(word_path):
             os.remove(word_path)
-
         return jsonify({'error': f"Try Again"}), 500
