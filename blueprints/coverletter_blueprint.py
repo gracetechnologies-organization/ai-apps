@@ -45,12 +45,11 @@ def generate_letter():
         Uname = request.form.get('UserName')
         Cname = request.form.get('CompanyName')
         job_description = request.form.get('JobDescription')
-        # user_api_key = request.form.get('ApiKey')
 
         if Uname is None or job_description is None or Cname is None:
             return jsonify({"message": "Missing 'User Name', 'Company Name', or 'Job Description' in request data"}), 422
         
-        elif len(job_description) < 10 or not job_description[:1].isalpha() or any(char in job_description for char in set('[~!@#$%^&*()_+{}":;\']+$')):
+        elif len(job_description) < 10 or not job_description[:1].isalpha() or any(char in job_description for char in set('[~!@$%^&*()_{};\]$')):
             raise ValueError("Please try with correct and detailed job description.")
 
         prompt = f"""Generate a concise 90-word cover letter tailored for the [Company Name] job application. Highlight the candidate's qualifications, skills, and enthusiasm, based on the provided job description.

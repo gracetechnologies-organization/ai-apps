@@ -1,5 +1,5 @@
 from flask import request, jsonify, Blueprint, current_app
-import random, json, os, threading, csv,ast
+import random, json, os, csv,ast
 import boto3, botocore
 import pandas as pd
 from middlewares.resauthorization import authorization_required
@@ -15,9 +15,6 @@ region_name = Creds["REGION_NAME"],
 aws_access_key_id=Creds["AWS_ACCESS_KEY"],
 aws_secret_access_key=Creds["AWS_SECRET_KEY"]
 )
-
-data_list = []
-data_lock = threading.Lock()
 
 DATASETS_DIR = 'Datasets'
 CSV_FILE = 'IOSDataset.csv'
@@ -88,7 +85,7 @@ def generate_resume():
         
         if job_description is None:
             return jsonify({"message" : "Job Description is missing."}), 422
-        elif len(job_description) < 10 or not job_description[:1].isalpha() or any(char in job_description for char in set('[~!@#$%^&*()_+{}":;\]+$')):
+        elif len(job_description) < 10 or not job_description[:1].isalpha() or any(char in job_description for char in set('[~!@$%^&*()_{};\]$')):
             return jsonify({"message" :"Please try with correct and detailed job description having no special characters."}), 422
         
         
@@ -112,9 +109,7 @@ def generate_resume():
             return jsonify(parsed_dict), 200
         else:
             data = {'JobDescription': job_description, 'Response': parsed_dict}
-            with data_lock:
-                data_list.append(data)
-            threading.Thread(target=save_to_csv, args=(data,)).start()
+            save_to_csv(data)
             return jsonify(parsed_dict), 200
     
     except ValueError as e:

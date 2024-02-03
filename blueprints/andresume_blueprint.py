@@ -1,12 +1,9 @@
 from flask import Blueprint, request, jsonify, current_app
-import openai, json, os, threading, csv
+import openai, json, os, csv
 from helpers.openaiHelper import get_openai_key_from_db
 from middlewares.resauthorization import authorization_required
 
 andresume_blueprint = Blueprint("andresume_blueprint", __name__)
-
-data_list = []
-data_lock = threading.Lock()
 
 DATASETS_DIR = 'Datasets'
 CSV_FILE = 'AndroidDataset.csv'
@@ -72,10 +69,10 @@ def generate_resume():
         if name is None or job_description is None or job_description.strip() == "" or name.strip() == "":
             return jsonify({"message": "Missing 'Name' or 'JobDescription' in request data"}), 422
         
-        elif len(job_description) < 10 or not job_description[:1].isalpha() or any(char in job_description for char in set('[~!@#$%^&*()_+{}":;\]+$')):
+        elif len(job_description) < 10 or not job_description[:1].isalpha() or any(char in job_description for char in set('[~!@$%^&*()_{};\]$')):
             raise ValueError("Please try with correct and detailed job description having no special characters.")
 
-        prompt = f"""Create a comprehensive CV for a candidate with a strong focus on their professional qualifications and experiences, tailored to the given job description. Data format must be (dd-mm-yyy). The CV must and only have following sections.
+        prompt = f"""Create a comprehensive CV for a candidate with a strong focus on their professional qualifications and experiences, tailored to the given job description. Date format must be (dd/mm/yyyy). The CV must and only have following sections.
 
                     CV Sections:
                     - Job Title (Heading)
@@ -94,12 +91,7 @@ def generate_resume():
 
         parsed_dict = get_completion(prompt, api_key=api_key)
         data = {'JobDescription': job_description, 'Response': parsed_dict}
-
-        with data_lock:
-            data_list.append(data)
-
-        threading.Thread(target=save_to_csv, args=(data,)).start()
-        
+        save_to_csv(data)        
         return jsonify(parsed_dict), 200
     except json.JSONDecodeError as e:
         current_app.logger.error(f"Error occurred: Response isn't in JSON format due to the job description provided: {str(e)}")

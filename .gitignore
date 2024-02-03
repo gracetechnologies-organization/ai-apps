@@ -14,3 +14,4 @@ __pycache__/
 /db Configuration
 /helpers/__pycache__
 Datasets/
+init.py
