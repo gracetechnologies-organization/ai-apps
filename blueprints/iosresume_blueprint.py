@@ -16,7 +16,7 @@ aws_access_key_id=Creds["AWS_ACCESS_KEY"],
 aws_secret_access_key=Creds["AWS_SECRET_KEY"]
 )
 
-DATASETS_DIR = 'Datasets'
+DATASETS_DIR = 'datasets'
 CSV_FILE = 'IOSDataset.csv'
 CSV_PATH = os.path.join(DATASETS_DIR, CSV_FILE)
 
@@ -42,6 +42,25 @@ def clean_response(txt):
     json_data = txt[start_index:end_index]
     parsed_json = json.loads(json_data)
     return parsed_json
+
+def convert_to_pascal_case(data):
+    def to_pascal_case(snake_str):
+        components = snake_str.split('_')
+        return ''.join(x.capitalize() for x in components)
+
+    pascal_cased_data = {}
+    for key, value in data.items():
+        if isinstance(value, list):
+            pascal_cased_data[to_pascal_case(key)] = []
+            for item in value:
+                pascal_cased_item = {}
+                for k, v in item.items():
+                    pascal_cased_item[to_pascal_case(k)] = v
+                pascal_cased_data[to_pascal_case(key)].append(pascal_cased_item)
+        else:
+            pascal_cased_data[to_pascal_case(key)] = value
+            
+    return pascal_cased_data
 
 def random_response():
     df = pd.read_csv('Datasets/IOSDataset.csv')
@@ -92,25 +111,26 @@ def generate_resume():
         prompt = f"""Human: Generate resume data for a candidate based on the provided job description. Include the following sections:
                     Profession
                     Objective (250-270 characters only)
-                    Experience (List of 2 JSON objects with Designation, Organization, JoiningDate, EndDate, and short 2 line JobDescription of max 100 characters only)
-                    Qualification (List of 2 JSON objects with Degree, EducationalOrganization, Score in format (CGPA: ???/4.0), CompletionDate)
-                    Achievements (List of 4 JSON objects having "AchievementTitle" key with with short achievement )
-                    Projects (List of 4  JSON objects having only "ProjectTitle" key with short project title)
-                    Skills (List of 4 JSON objects having only "SkillName" key)
-                    Interests (List of 3 JSON object having only "Interest" key)
-                    Ensure that the all keys must be same as defined section names (starting capital letter) and format of resume data must as JSON.
+                    Experience (List of 2 JSON objects with designation, organization, joining_date, end_date, and short 2 line job_description of max 100 characters only)
+                    Qualification (List of 2 JSON objects with degree, educational_organization, score in format (CGPA: ???/4.0), completion_date)
+                    Achievements (List of 4 JSON objects having "achievement_title" key with with short achievement )
+                    Projects (List of 4  JSON objects having only "project_title" key with short project title)
+                    Skills (List of 4 JSON objects having only "skill_name" key)
+                    Interests (List of 3 JSON object having only "interest" key)
+                    Ensure that the all keys must be same as defined section names and must be in lowercase (snake case), date should be in yyyy-mm-dd and format of resume data must as JSON.
                     Job Description: "{job_description}"
                     Assistant:
                     """
         parsed_dict = get_completion(prompt)
+        response = convert_to_pascal_case(parsed_dict)
 
-        if parsed_dict is None:
-            parsed_dict = random_response()
-            return jsonify(parsed_dict), 200
+        if response is None:
+            response = random_response()
+            return jsonify(response), 200
         else:
-            data = {'JobDescription': job_description, 'Response': parsed_dict}
+            data = {'JobDescription': job_description, 'Response': response}
             save_to_csv(data)
-            return jsonify(parsed_dict), 200
+            return jsonify(response), 200
     
     except ValueError as e:
         current_app.logger.error(f"Error occurred: {str(e)}")

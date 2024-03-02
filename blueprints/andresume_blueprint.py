@@ -5,7 +5,7 @@ from middlewares.resauthorization import authorization_required
 
 andresume_blueprint = Blueprint("andresume_blueprint", __name__)
 
-DATASETS_DIR = 'Datasets'
+DATASETS_DIR = 'datasets'
 CSV_FILE = 'AndroidDataset.csv'
 CSV_PATH = os.path.join(DATASETS_DIR, CSV_FILE)
 

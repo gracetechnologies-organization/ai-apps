@@ -2,19 +2,19 @@ import logging
 from logging.handlers import RotatingFileHandler
 from  flask import Flask, jsonify
 from blueprints.version_blueprint import vchecker_blurprint
-from blueprints.word2pdf import docx2pdf_blueprint
-from blueprints.pdf2word import pdf2word_blueprint
-from blueprints.pptx2pdf import ppt2pdf_blueprint
-from blueprints.pdf2ppt import pdf2ppt_blueprint
-from blueprints.xlsx2pdf import xls2pdf_blueprint
-from blueprints.pdf2xls import pdf2xls_blueprint
+from blueprints.word2pdf_blueprint import docx2pdf_blueprint
+from blueprints.pdf2word_blueprint import pdf2word_blueprint
+from blueprints.pptx2pdf_blueprint import ppt2pdf_blueprint
+from blueprints.pdf2ppt_blueprint import pdf2ppt_blueprint
+from blueprints.xlsx2pdf_blueprint import xls2pdf_blueprint
+from blueprints.pdf2xls_blueprint import pdf2xls_blueprint
 from blueprints.iosresume_blueprint import iosresume_blueprint
 from blueprints.andresume_blueprint import andresume_blueprint
 from blueprints.coverletter_blueprint import letter_blueprint
 from blueprints.webresume_blueprint import webresume_blueprint
-from blueprints.SR_blueprint import SR_blueprint
-from blueprints.Denoiser_blurprint import Denoising_blueprint
-from blueprints.PortraitEnhancer_blueprint import PE_blueprint
+from blueprints.sr_blueprint import SR_blueprint
+from blueprints.denoiser_blurprint import Denoising_blueprint
+from blueprints.portraitenhancer_blueprint import PE_blueprint
 from blueprints.rembg_blueprint import bgrem_blueprint
 
 

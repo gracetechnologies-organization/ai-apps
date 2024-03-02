@@ -50,7 +50,7 @@ def generate_resume():
         if name is None or job_description is None or job_description.strip() == "" or name.strip() == "":
             return jsonify({"message": "Missing 'Name' or 'JobDescription' in request data"}), 422
         
-        elif len(job_description) < 10 or not job_description[:1].isalpha() or any(char in job_description for char in set('[~!@#$%^&*()_+{}":;\]+$')):
+        elif len(job_description) < 10 or not job_description[:1].isalpha() or any(char in job_description for char in set('[~!@$%^&*()_{};\]$')):
             raise ValueError("Please try with correct and detailed job description having no special characters.")
 
         prompt = f"""Create a comprehensive CV for a candidate with a strong focus on their professional qualifications and experiences, tailored to the given job description. Data format must be (dd-mm-yyy). The CV must and only have following sections.
